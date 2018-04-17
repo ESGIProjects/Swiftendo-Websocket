@@ -18,7 +18,7 @@ class Monster {
 	
 	init() {
 		health = 1
-		speed = 45
+		speed = 30
 		
 		if GKRandomSource.sharedRandom().nextBool() {
 			node = SKSpriteNode(imageNamed: "metroid")

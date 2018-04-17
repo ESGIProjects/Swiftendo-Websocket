@@ -8,8 +8,8 @@
 
 import SpriteKit
 import GameplayKit
-
 import AVFoundation
+import Starscream
 
 class GameScene: SKScene {
 	
@@ -50,6 +50,11 @@ class GameScene: SKScene {
 	private var player: Player!
 	private var monsters = [Monster]()
 	
+	// MARK: - Websocket
+	var socket: WebSocket?
+	var delayBetweenSocketActions = 0.1
+	var lastSocketAction = 0.0
+	
 	// MARK: - SKScene
     
     override func didMove(to view: SKView) {
@@ -73,6 +78,13 @@ class GameScene: SKScene {
 		
 		// Start enemy spawn 5 seconds later
 		timer = launchMonsterGeneration(timeInterval: 5)
+		
+		// Start the websocket
+		if let webSocketURL = URL(string: "ws://172.20.10.5:81") {
+			socket = WebSocket(url: webSocketURL, protocols: [])
+			socket?.delegate = self
+			socket?.connect()
+		}
     }
 	
 	private func launchMonsterGeneration(timeInterval: TimeInterval) -> Timer {
@@ -390,4 +402,45 @@ extension GameScene: SKPhysicsContactDelegate {
 			}
 		}
 	}
+}
+
+// MARK: - WebSocketDelegate
+extension GameScene: WebSocketDelegate {
+	func websocketDidConnect(socket: WebSocketClient) {
+		print(#function)
+		
+		for (_, button) in buttons {
+			button.removeFromParent()
+		}
+	}
+	
+	func websocketDidDisconnect(socket: WebSocketClient, error: Error?) {
+		print(#function)
+		print(error ?? "no error")
+		
+		for (_, button) in buttons {
+			cameraNode.addChild(button)
+		}
+	}
+	
+	func websocketDidReceiveMessage(socket: WebSocketClient, text: String) {
+		print(#function)
+		
+		print(text)
+		
+		let now = CFAbsoluteTimeGetCurrent()
+		
+		if let button = buttons[text] {
+			if now - lastSocketAction >= delayBetweenSocketActions {
+				button.action?()
+				lastSocketAction = now
+			}
+		}
+	}
+	
+	func websocketDidReceiveData(socket: WebSocketClient, data: Data) {
+		print(#function)
+	}
+	
+	
 }
