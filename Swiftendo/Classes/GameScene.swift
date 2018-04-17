@@ -10,7 +10,6 @@ import SpriteKit
 import GameplayKit
 
 import AVFoundation
-import WatchConnectivity
 
 class GameScene: SKScene {
 	
@@ -51,9 +50,6 @@ class GameScene: SKScene {
 	private var player: Player!
 	private var monsters = [Monster]()
 	
-	// MARK: - Apple Watch session
-	private var session: WCSession?
-	
 	// MARK: - SKScene
     
     override func didMove(to view: SKView) {
@@ -62,9 +58,6 @@ class GameScene: SKScene {
 
 		tileMapNode = childNode(withName: "Tile Map Node") as! SKTileMapNode
 		physicsWorld.contactDelegate = self
-
-		// Start watch session
-		startSession()
 		
 		// Set player property
 		player = spawnPlayer()
@@ -211,16 +204,7 @@ class GameScene: SKScene {
 		actionButton.yScale = 0.6
 		actionButton.alpha = 0.5
 		buttons["action"] = actionButton
-		
-		displayActionButton()
-    }
-    
-    private func startSession() {
-        if WCSession.isSupported() {
-            session = WCSession.default
-            session?.delegate = self
-            session?.activate()
-        }
+		cameraNode.addChild(actionButton)
     }
 	
 	private func touchButton(_ button: ButtonType) {
@@ -376,20 +360,6 @@ class GameScene: SKScene {
 		// Resume timer
 		timer = launchMonsterGeneration(timeInterval: 5)
 	}
-	
-	private func displayActionButton() {
-		guard let actionButton = buttons["action"] else { return }
-		
-		if let session = session {
-			if !session.isReachable {
-				cameraNode.addChild(actionButton)
-			}  else {
-				actionButton.removeFromParent()
-			}
-		} else {
-			cameraNode.addChild(actionButton)
-		}
-	}
 }
 
 // MARK: - AVAudioPlayerDelegate
@@ -419,33 +389,5 @@ extension GameScene: SKPhysicsContactDelegate {
 				collisionBetween(monster: contact.bodyB.node!, pokeball: contact.bodyA.node!)
 			}
 		}
-	}
-}
-
-// MARK: - WCSessionDelegate
-extension GameScene: WCSessionDelegate {
-    
-    func session(_ session: WCSession, didReceiveMessage message: [String : Any]) {
-		if let action = message["action"] as? String {
-			if action == "action" {
-				touchButton(.action)
-			}
-		}
-    }
-    
-    func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
-		
-    }
-    
-    func sessionDidBecomeInactive(_ session: WCSession) {
-        
-    }
-    
-    func sessionDidDeactivate(_ session: WCSession) {
-        
-    }
-	
-	func sessionReachabilityDidChange(_ session: WCSession) {
-		displayActionButton()
 	}
 }
