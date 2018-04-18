@@ -14,6 +14,7 @@ import Starscream
 class GameScene: SKScene {
 	
 	private var timer: Timer!
+	private var isGameOver = false
 	
 	// MARK: - SpriteKit properties
 	private var cameraNode: SKCameraNode!
@@ -312,6 +313,7 @@ class GameScene: SKScene {
 	
 	func gameOver() {
 		print("Game over!")
+		isGameOver = true
 		
 		timer.invalidate()
 		
@@ -351,6 +353,7 @@ class GameScene: SKScene {
 	}
 	
 	func restart() {
+		isGameOver = false
 		
 		// Remove monsters
 		for monster in monsters {
@@ -386,18 +389,18 @@ extension GameScene: SKPhysicsContactDelegate {
 	func didBegin(_ contact: SKPhysicsContact) {
 		if contact.bodyA.node?.name == "monster" {
 			if contact.bodyB.node?.name == "player" {
-				print("Player collision")
+//				print("Player collision")
 				collisionBetween(monster: contact.bodyA.node!, player: contact.bodyB.node!)
 			} else if contact.bodyB.node?.name == "pokeball" {
-				print("Pokeball collision")
+//				print("Pokeball collision")
 				collisionBetween(monster: contact.bodyA.node!, pokeball: contact.bodyB.node!)
 			}
 		} else if contact.bodyB.node?.name == "monster" {
 			if contact.bodyA.node?.name == "player" {
-				print("Player collision")
+//				print("Player collision")
 				collisionBetween(monster: contact.bodyB.node!, player: contact.bodyA.node!)
 			} else if contact.bodyA.node?.name == "pokeball" {
-				print("Pokeball collision")
+//				print("Pokeball collision")
 				collisionBetween(monster: contact.bodyB.node!, pokeball: contact.bodyA.node!)
 			}
 		}
@@ -406,6 +409,10 @@ extension GameScene: SKPhysicsContactDelegate {
 
 // MARK: - WebSocketDelegate
 extension GameScene: WebSocketDelegate {
+	func websocketDidReceiveData(socket: WebSocketClient, data: Data) {
+		
+	}
+	
 	func websocketDidConnect(socket: WebSocketClient) {
 		print(#function)
 		
@@ -415,32 +422,28 @@ extension GameScene: WebSocketDelegate {
 	}
 	
 	func websocketDidDisconnect(socket: WebSocketClient, error: Error?) {
-		print(#function)
-		print(error ?? "no error")
+		print(#function, error ?? "without error")
 		
 		for (_, button) in buttons {
-			cameraNode.addChild(button)
-		}
-	}
-	
-	func websocketDidReceiveMessage(socket: WebSocketClient, text: String) {
-		print(#function)
-		
-		print(text)
-		
-		let now = CFAbsoluteTimeGetCurrent()
-		
-		if let button = buttons[text] {
-			if now - lastSocketAction >= delayBetweenSocketActions {
-				button.action?()
-				lastSocketAction = now
+			if button.parent == nil {
+				cameraNode.addChild(button)
 			}
 		}
 	}
 	
-	func websocketDidReceiveData(socket: WebSocketClient, data: Data) {
-		print(#function)
+	func websocketDidReceiveMessage(socket: WebSocketClient, text: String) {
+		let now = CFAbsoluteTimeGetCurrent()
+		
+		if let button = buttons[text] {
+			if now - lastSocketAction >= delayBetweenSocketActions {
+				if isGameOver {
+					restart()
+				} else {
+					button.action?()
+					
+					lastSocketAction = now
+				}
+			}
+		}
 	}
-	
-	
 }

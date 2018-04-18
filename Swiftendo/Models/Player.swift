@@ -75,7 +75,7 @@ class Player {
 			}
 			
 			node.run(SKAction.group(group)) { [unowned self] in
-				print("(After move)", "Player position -", "x: \(self.node.position.x)", "y: \(self.node.position.y)")
+//				print("(After move)", "Player position -", "x: \(self.node.position.x)", "y: \(self.node.position.y)")
 			}
 		}
 	}
